@@ -206,6 +206,42 @@ spec:
         workspace: git-auth
       - name: netrc
         workspace: netrc
+    - name: build-dynamic-plugins
+      params:
+        - name: ociStorage
+          value: $(params.output-image).script
+        - name: ociArtifactExpiresAfter
+          value: $(params.image-expires-after)
+        - name: SCRIPT_RUNNER_IMAGE
+          value: registry.redhat.io/rhel9/nodejs-20:latest@sha256:8d8ab723e421f7303b51de36317a5632e7b161a016cd76a214f993124c5b1a95
+        - name: SCRIPT_ARTIFACT_RELATIVE_PATH
+          value: deploy
+        - name: SCRIPT
+          value: |
+            #!/bin/bash
+            export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+            npm install --global corepack
+            yarn install
+            yarn tsc
+            yarn build
+            yarn export-local
+            INDEX_BASE64=$(base64 -w 0 deploy/index.json)
+            echo -n "io.backstage.dynamic-packages=$INDEX_BASE64" > "${SCRIPT_OUTPUT}"
+        - name: HERMETIC
+          value: $(params.hermetic)
+        - name: SOURCE_ARTIFACT
+          value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+      runAfter:
+      - prefetch-dependencies
+      taskRef:
+        params:
+        - name: name
+          value: run-script-oci-ta
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-run-script-oci-ta:0.1@sha256:c0f627069353ebd6d1ed03c8657e281eaf11be63706ea38cc53caf16cf4ffd65
+        - name: kind
+          value: task
+        resolver: bundles
     - matrix:
         params:
         - name: PLATFORM
@@ -235,13 +271,19 @@ spec:
       - name: PRIVILEGED_NESTED
         value: $(params.privileged-nested)
       - name: SOURCE_ARTIFACT
-        value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+        value: $(tasks.build-dynamic-plugins.results.SCRIPT_ARTIFACT)
       - name: CACHI2_ARTIFACT
         value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
       - name: IMAGE_APPEND_PLATFORM
         value: "true"
+      - name: ADDITIONAL_BASE_IMAGES
+        value:
+          - $(tasks.build-dynamic-plugins.SCRIPT_RUNNER_IMAGE_REFERENCE)
+      - name: ANNOTATIONS
+        value:
+          - $(tasks.build-dynamic-plugins.SCRIPT_OUTPUT)
       runAfter:
-      - prefetch-dependencies
+      - build-dynamic-plugins
       taskRef:
         params:
         - name: name

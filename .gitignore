@@ -36,6 +36,8 @@ dist
 dist-types
 dist-dynamic
 deploy/*
+!deploy/Containerfile
+!deploy/.dockerignore
 
 # Temporary change files created by Vim
 *.swp
