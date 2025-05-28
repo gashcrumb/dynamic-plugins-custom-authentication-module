@@ -10,7 +10,6 @@
   },
   "backstage": {
     "role": "frontend-plugin",
-    "supported-versions": "1.32.6",
     "pluginId": "immobiliarelabs-ldap-auth",
     "pluginPackages": [
       "immobiliarelabs-backstage-plugin-ldap-auth",
@@ -43,7 +42,7 @@
   },
   "devDependencies": {
     "@backstage/cli": "^0.30.0",
-    "@janus-idp/cli": "3.3.0",
+    "@janus-idp/cli": "3.6.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router": "^6.4.5",
